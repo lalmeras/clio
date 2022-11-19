@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/lalmeras/clio/pkg/types"
+	"github.com/lalmeras/clio/pkg/types_cloud"
 	"github.com/lalmeras/clio/pkg/util"
 	"github.com/spf13/cobra"
 )
@@ -94,7 +94,7 @@ var imageListCmd = &cobra.Command{
 			values.Set("region", imageFilter.Region)
 		}
 		murl := "/cloud/project/" + ProjectID + "/image?" + values.Encode()
-		images := []types.Image{}
+		images := []types_cloud.Cloudimage_Image{}
 		util.Check(util.OvhGet(murl, &images))
 		for _, image := range images {
 			fmt.Printf("%+v\n", image)
@@ -113,18 +113,18 @@ var imageGetCmd = &cobra.Command{
 	},
 }
 
-func Project(projectID string) (*types.Project, error) {
+func Project(projectID string) (*types_cloud.Cloud_Project, error) {
 	url := "/cloud/project/" + projectID
-	project := &types.Project{}
+	project := &types_cloud.Cloud_Project{}
 	if err := util.OvhGet(url, &project); err != nil {
 		return nil, err
 	}
 	return project, nil
 }
 
-func Image(projectID string, imageID string) (*types.Image, error) {
+func Image(projectID string, imageID string) (*types_cloud.Cloudimage_Image, error) {
 	murl := "/cloud/project/" + projectID + "/image/" + imageID
-	image := &types.Image{}
+	image := &types_cloud.Cloudimage_Image{}
 	if err := util.OvhGet(murl, &image); err != nil {
 		return nil, err
 	}

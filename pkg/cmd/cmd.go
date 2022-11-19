@@ -42,11 +42,9 @@ func init() {
 	rootCmd.AddCommand(meCmd)
 	rootCmd.AddCommand(authCmd)
 	rootCmd.AddCommand(cloudCmd)
-	rootCmd.AddCommand(apiCmd)
 
 	rootCmd.AddGroup(authGroup)
 	rootCmd.AddGroup(cloudGroup)
-	rootCmd.AddGroup(apiGroup)
 }
 
 var loginCmd = &cobra.Command{
