@@ -42,6 +42,7 @@ func init() {
 	rootCmd.AddCommand(meCmd)
 	rootCmd.AddCommand(authCmd)
 	rootCmd.AddCommand(cloudCmd)
+	rootCmd.AddCommand(dynamicCommand)
 
 	rootCmd.AddGroup(authGroup)
 	rootCmd.AddGroup(cloudGroup)

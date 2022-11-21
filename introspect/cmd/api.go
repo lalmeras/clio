@@ -14,6 +14,7 @@ import (
 	"github.com/lalmeras/clio/introspect/util"
 	"github.com/spf13/cobra"
 	"golang.org/x/exp/maps"
+	"golang.org/x/exp/slices"
 )
 
 func Execute() {
@@ -40,17 +41,22 @@ func init() {
 	downloadCmd.MarkFlagRequired("api")
 }
 
+func DownloadDescription(name string) *types.ApiDescriptionDocument {
+	var result types.ApiDescriptionDocument
+	url := ROOT_URL + version + "/" + name + ".json"
+	resp, err := http.Get(url)
+	util.Check(err)
+	defer resp.Body.Close()
+	json.NewDecoder(resp.Body).Decode(&result)
+	return &result
+}
+
 var downloadCmd = &cobra.Command{
 	Use:   "download",
 	Short: "Download API descriptor",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		var result types.ApiDescriptionDocument
-		url := ROOT_URL + version + "/" + args[0] + ".json"
-		resp, err := http.Get(url)
-		util.Check(err)
-		defer resp.Body.Close()
-		json.NewDecoder(resp.Body).Decode(&result)
+		result := DownloadDescription(args[0])
 		if len(extractTypes) == 1 && extractTypes[0] == "*" {
 			extractTypes = maps.Keys(result.Models)
 			sort.Strings(extractTypes)
@@ -86,6 +92,20 @@ var downloadCmd = &cobra.Command{
 		if !ok {
 			fmt.Printf("One or more error during generation.\n")
 		}
+		parTypes := make([]string, 0)
+		for _, s := range *result.Apis {
+			for _, o := range *s.Operations {
+				if "GET" != o.HttpMethod {
+					continue
+				}
+				for _, p := range *o.Parameters {
+					if !slices.Contains(parTypes, p.FullType) {
+						parTypes = append(parTypes, p.FullType)
+					}
+				}
+			}
+		}
+		fmt.Printf("%+v\n", parTypes)
 		buf.Flush()
 	},
 }

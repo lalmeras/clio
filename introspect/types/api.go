@@ -17,7 +17,7 @@ type ApiDescriptionDocument struct {
 
 type ApiDescription struct {
 	Path        string                  `json:"path"`
-	Operations  *[]*interface{}         `json:"operations"`
+	Operations  *[]*ApiOperation        `json:"operations"`
 	Description string                  `json:"description"`
 	X           map[string]*interface{} `json:"-"`
 }
@@ -54,7 +54,7 @@ type ApiOperation struct {
 }
 
 type ApiParameter struct {
-	Name        string                  `json:"product"`
+	Name        string                  `json:"name"`
 	DataType    string                  `json:"dataType"`
 	ParamType   string                  `json:"paramType"`
 	FullType    string                  `json:"fullType"`
