@@ -1,0 +1,50 @@
+{{- $template := . -}}
+package types_{{ .Name }}
+{{- if gt (len .Imports) 0 }}
+
+import (
+{{- range .Imports }}
+    "{{ . }}"
+{{- end }}
+)
+{{- end -}}
+{{- range .SortedModels }}
+{{- with index $template.Types . }}
+{{- $model := . }}
+{{- $typeName := $template.GoTypeName $model }}
+{{- if gt (len $model.Properties) 0 }}
+
+type {{ $typeName }} struct {
+{{- $fieldPadValue := $template.NamePadding $model }}
+{{- $typePadValue := $template.TypePadding $template.Types $model }}
+{{- range $key, $value := $model.Properties }}
+	{{ $template.PadGoName $key $value $fieldPadValue }} {{ $template.PadGoType $template.Types $key $value $typePadValue }} {{ $template.JsonTag $key }}
+	{{- end }}
+}
+{{- else if $model.EnumType | eq "string" }}
+
+type {{ $typeName }} string
+const (
+{{- range $key, $value := $model.Enum }}
+	{{ $template.GoEnumSymbol $model $value }} {{ if $key | eq 0 }}{{ $typeName }}{{ end }} = "{{ $value }}"
+{{- end }}
+)
+{{- else if $model.EnumType | eq "long" }}
+
+type {{ $typeName }} int64
+const (
+{{- range $key, $value := $model.Enum }}
+	{{ $template.GoEnumSymbol $model $value }} {{ if $key | eq 0 }}{{ $typeName }}{{ end }} = {{ $value }}
+{{- end }}
+)
+{{- else if $model.EnumType | eq "double" }}
+
+type {{ $typeName }} float64
+const (
+{{- range $key, $value := $model.Enum }}
+	{{ $template.GoEnumSymbol $model $value }} {{ if $key | eq 0 }}{{ $typeName }}{{ end }} = {{ $value }}
+{{- end }}
+)
+{{- end }}
+{{- end }}
+{{- end }}

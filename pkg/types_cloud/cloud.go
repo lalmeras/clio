@@ -1,10 +1,9 @@
 package types_cloud
 
 import (
-	"time"
-	"github.com/lalmeras/clio/pkg/types"
+    "time"
+    "github.com/lalmeras/clio/pkg/types"
 )
-
 
 type Cloud_AccessTypeEnum string
 const (

@@ -70,8 +70,10 @@ type ApiStatus struct {
 }
 
 type ApiTemplate struct {
-	CurrentType *ApiModel
-	Types       map[string]*ApiModel
+	Name         string
+	Types        map[string]*ApiModel
+	SortedModels []string
+	Imports      []string
 }
 
 func (self *ApiTemplate) JsonTag(name string) string {
