@@ -1,11 +1,13 @@
 package cmd
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
+	"sort"
 	"text/template"
 
 	"github.com/lalmeras/clio/introspect/types"
@@ -51,13 +53,20 @@ var downloadCmd = &cobra.Command{
 		json.NewDecoder(resp.Body).Decode(&result)
 		if len(extractTypes) == 1 && extractTypes[0] == "*" {
 			extractTypes = maps.Keys(result.Models)
+			sort.Strings(extractTypes)
 		}
 		ok := true
-		fmt.Printf("package types_cloud\n\n")
-		fmt.Printf(`import (
+		f, err := os.OpenFile(fmt.Sprintf("pkg/types_%[1]s/%[1]s.go", args[0]), os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
+		if err != nil {
+			panic(err)
+		}
+		defer f.Close()
+		buf := bufio.NewWriter(f)
+		fmt.Fprintf(buf, "package types_%s\n\n", args[0])
+		fmt.Fprint(buf, `import (
 	"time"
 	"github.com/lalmeras/clio/pkg/types"
-)` + "\n\n")
+)`+"\n\n")
 		for _, t := range extractTypes {
 			if val, ok := result.Models[t]; ok {
 				if val.ID == "UnitAndValue" {
@@ -66,7 +75,7 @@ var downloadCmd = &cobra.Command{
 				var rendered bytes.Buffer
 				template := template.Must(template.New("struct").Parse(STRUCT_TEMPLATE))
 				if err := template.Execute(&rendered, &types.ApiTemplate{CurrentType: val, Types: result.Models}); err == nil {
-					fmt.Printf(rendered.String())
+					fmt.Fprint(buf, rendered.String())
 				} else {
 					fmt.Printf("%s.%s\n", val.Namespace, val.ID)
 					fmt.Printf("%q\n", err)
@@ -77,6 +86,7 @@ var downloadCmd = &cobra.Command{
 		if !ok {
 			fmt.Printf("One or more error during generation.\n")
 		}
+		buf.Flush()
 	},
 }
 
