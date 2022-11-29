@@ -14,8 +14,8 @@ import (
 	"golang.org/x/sync/semaphore"
 	"gopkg.in/ini.v1"
 
+	"github.com/lalmeras/clio/introspect/util"
 	"github.com/lalmeras/clio/pkg/types"
-	"github.com/lalmeras/clio/pkg/util"
 )
 
 const LOGIN_PORT = 8000

@@ -74,7 +74,20 @@ type ApiTemplate struct {
 	Types        map[string]*ApiModel
 	SortedModels []string
 	Imports      []string
+	Parameters   []*ApiOperationParameter
 }
+
+type ApiOperationParameter struct {
+	Order     string
+	VarName   string
+	VarType   string
+	Operation *ApiOperation
+	Parameter *ApiParameter
+}
+
+type ApiOperationsParameters []*ApiOperationParameter
+
+func (self ApiOperationsParameters) Less(i, j int) bool { return self[i].Order < self[j].Order }
 
 func (self *ApiTemplate) JsonTag(name string) string {
 	return fmt.Sprintf("`json:\"%s\"`", name)
@@ -160,6 +173,16 @@ func (self *ApiTemplate) TypePadding(models map[string]*ApiModel, model *ApiMode
 		}
 	}
 	return max
+}
+
+var SUPPORTED_TYPES []string = []string{
+	"string",
+	"password",
+	"long",
+	"datetime",
+	"uuid",
+	"ipBlock",
+	"boolean",
 }
 
 var GO_TYPES = map[string]string{

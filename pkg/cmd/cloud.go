@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"net/url"
 
+	"github.com/lalmeras/clio/introspect/util"
 	"github.com/lalmeras/clio/pkg/types_cloud"
-	"github.com/lalmeras/clio/pkg/util"
 	"github.com/spf13/cobra"
 )
 

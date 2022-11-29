@@ -12,6 +12,7 @@ import (
 	"text/template"
 
 	"github.com/lalmeras/clio/introspect/types"
+	"github.com/lalmeras/clio/introspect/util"
 	"github.com/spf13/cobra"
 	"golang.org/x/exp/maps"
 	"golang.org/x/exp/slices"
@@ -76,6 +77,33 @@ func FilterModels(models map[string]*types.ApiModel) []string {
 func ApiCommand(cmd *cobra.Command, args []string) {
 	result := DownloadDescription(args[0])
 	sortedModels := FilterModels(result.Models)
+
+	parameters := make(types.ApiOperationsParameters, 0)
+	parTypes := make([]string, 0)
+	for _, s := range *result.Apis {
+		for _, o := range *s.Operations {
+			if "GET" != o.HttpMethod {
+				continue
+			}
+			for _, p := range *o.Parameters {
+				if CanGenerate(o, p) {
+					parameters = append(parameters, &types.ApiOperationParameter{
+						Order:     util.VarName(o, p),
+						VarName:   util.VarName(o, p),
+						VarType:   util.VarType(o, p),
+						Operation: o,
+						Parameter: p})
+				}
+				if !slices.Contains(parTypes, p.FullType) {
+					parTypes = append(parTypes, p.FullType)
+				}
+			}
+		}
+	}
+	fmt.Printf("%+v\n", parTypes)
+	sort.SliceStable(parameters, parameters.Less)
+	parameters = Unique(parameters)
+
 	f, err := os.OpenFile(fmt.Sprintf("pkg/types_%[1]s/%[1]s.go", args[0]), os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
 	if err != nil {
 		panic(err)
@@ -88,23 +116,27 @@ func ApiCommand(cmd *cobra.Command, args []string) {
 		SortedModels: sortedModels,
 		Types:        result.Models,
 		Imports:      []string{"time", "github.com/lalmeras/clio/pkg/types"},
+		Parameters:   parameters,
 	}
 	if err := template.Execute(buf, &templateModel); err != nil {
 		panic(err)
 	}
-	parTypes := make([]string, 0)
-	for _, s := range *result.Apis {
-		for _, o := range *s.Operations {
-			if "GET" != o.HttpMethod {
-				continue
-			}
-			for _, p := range *o.Parameters {
-				if !slices.Contains(parTypes, p.FullType) {
-					parTypes = append(parTypes, p.FullType)
-				}
-			}
-		}
-	}
-	fmt.Printf("%+v\n", parTypes)
 	buf.Flush()
+}
+
+func Unique(parameters []*types.ApiOperationParameter) []*types.ApiOperationParameter {
+	result := make([]*types.ApiOperationParameter, 0)
+	var last types.ApiOperationParameter
+	for _, p := range parameters {
+		// only append new values
+		if last.Order == "" || last.Order != p.Order {
+			result = append(result, p)
+		}
+		last = *p
+	}
+	return result
+}
+
+func CanGenerate(operation *types.ApiOperation, parameter *types.ApiParameter) bool {
+	return slices.Contains(types.SUPPORTED_TYPES, parameter.DataType)
 }

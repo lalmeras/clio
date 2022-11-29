@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/lalmeras/clio/introspect/util"
 	"github.com/lalmeras/clio/pkg/types"
-	"github.com/lalmeras/clio/pkg/util"
 	"github.com/spf13/cobra"
 )
 

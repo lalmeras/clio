@@ -48,3 +48,9 @@ const (
 {{- end }}
 {{- end }}
 {{- end }}
+
+type CmdParameters struct {
+{{ range $key, $parameter := .Parameters }}
+	{{ $parameter.VarName }} {{ $parameter.VarType }}
+{{- end }}
+}
