@@ -6,75 +6,12 @@ import (
 	"strings"
 )
 
-type ApiDescriptionDocument struct {
-	ApiVersion   string                  `json:"apiversion"`
-	Apis         *[]*ApiDescription      `json:"apis"`
-	ResourcePath string                  `json:"resourcePath"`
-	BasePath     string                  `json:"basePath"`
-	Models       map[string]*ApiModel    `json:"models"`
-	X            map[string]*interface{} `json:"-"`
-}
-
-type ApiDescription struct {
-	Path        string                  `json:"path"`
-	Operations  *[]*ApiOperation        `json:"operations"`
-	Description string                  `json:"description"`
-	X           map[string]*interface{} `json:"-"`
-}
-
-type ApiModel struct {
-	ID          string                  `json:"id"`
-	Namespace   string                  `json:"namespace"`
-	Description string                  `json:"description"`
-	Enum        *[]string               `json:"enum"`
-	EnumType    string                  `json:"enumType"`
-	Properties  map[string]*ApiField    `json:"properties"`
-	X           map[string]*interface{} `json:"-"`
-}
-
-type ApiField struct {
-	Type        string                  `json:"type"`
-	FullType    string                  `json:"fullType"`
-	CanBeNull   bool                    `json:"canBeNull"`
-	ReadOnly    bool                    `json:"readOnly"`
-	Description string                  `json:"description"`
-	Required    bool                    `json:"required"`
-	X           map[string]*interface{} `json:"-"`
-}
-
-type ApiOperation struct {
-	ApiStatus        *ApiStatus             `json:"apiStatus"`
-	HttpMethod       string                 `json:"httpMethod"`
-	Parameters       *[]*ApiParameter       `json:"parameters"`
-	ResponseType     string                 `json:"responseType"`
-	NoAuthentication bool                   `json:"noAuthentication"`
-	Description      string                 `json:"description"`
-	Scopes           *[]string              `json:"scopes"`
-	X                map[string]interface{} `json:"-"`
-}
-
-type ApiParameter struct {
-	Name        string                  `json:"name"`
-	DataType    string                  `json:"dataType"`
-	ParamType   string                  `json:"paramType"`
-	FullType    string                  `json:"fullType"`
-	Required    bool                    `json:"required"`
-	Description string                  `json:"description"`
-	X           map[string]*interface{} `json:"-"`
-}
-
-type ApiStatus struct {
-	Description string                  `json:"description"`
-	Value       string                  `json:"value"`
-	X           map[string]*interface{} `json:"-"`
-}
-
 type ApiTemplate struct {
 	Name         string
 	Types        map[string]*ApiModel
 	SortedModels []string
 	Imports      []string
-	Parameters   []*ApiOperationParameter
+	Parameters   ApiOperationsParameters
 }
 
 type ApiOperationParameter struct {

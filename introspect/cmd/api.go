@@ -104,7 +104,7 @@ func ApiCommand(cmd *cobra.Command, args []string) {
 	sort.SliceStable(parameters, parameters.Less)
 	parameters = Unique(parameters)
 
-	f, err := os.OpenFile(fmt.Sprintf("pkg/types_%[1]s/%[1]s.go", args[0]), os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
+	f, err := os.OpenFile(fmt.Sprintf("../pkg/types_%[1]s/%[1]s.go", args[0]), os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
 	if err != nil {
 		panic(err)
 	}
