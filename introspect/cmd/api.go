@@ -80,7 +80,7 @@ func ApiCommand(cmd *cobra.Command, args []string) {
 
 	parameters := make(types.ApiOperationsParameters, 0)
 	parTypes := make([]string, 0)
-	for _, s := range *result.Apis {
+	for _, s := range result.Apis {
 		for _, o := range *s.Operations {
 			if "GET" != o.HttpMethod {
 				continue

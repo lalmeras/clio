@@ -95,5 +95,5 @@ func Get(operations *[]*types.ApiOperation) (*types.ApiOperation, bool) {
 
 func init() {
 	desc := cmd.DownloadDescription("cloud")
-	register(*desc.Apis)
+	register(desc.Apis)
 }
