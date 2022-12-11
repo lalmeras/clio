@@ -81,11 +81,11 @@ func ApiCommand(cmd *cobra.Command, args []string) {
 	parameters := make(types.ApiOperationsParameters, 0)
 	parTypes := make([]string, 0)
 	for _, s := range result.Apis {
-		for _, o := range *s.Operations {
+		for _, o := range s.Operations {
 			if "GET" != o.HttpMethod {
 				continue
 			}
-			for _, p := range *o.Parameters {
+			for _, p := range o.Parameters {
 				if CanGenerate(o, p) {
 					parameters = append(parameters, &types.ApiOperationParameter{
 						Order:     util.VarName(o, p),

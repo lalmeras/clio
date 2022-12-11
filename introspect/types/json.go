@@ -2,6 +2,8 @@
 // (like https://api.ovh.com/1.0/cloud.json)
 package types
 
+import "time"
+
 // This is the root type of OVH API description
 type ApiDescriptionDocument struct {
 	ApiVersion   string                 `json:"apiversion"`
@@ -16,7 +18,7 @@ type ApiDescriptionDocument struct {
 // Multiple methods are described as separate operation.
 type ApiDescription struct {
 	Path        string                 `json:"path"`
-	Operations  *[]*ApiOperation       `json:"operations"`
+	Operations  []*ApiOperation        `json:"operations"`
 	Description string                 `json:"description"`
 	X           map[string]interface{} `json:"-"`
 }
@@ -26,7 +28,7 @@ type ApiModel struct {
 	ID          string                 `json:"id"`
 	Namespace   string                 `json:"namespace"`
 	Description string                 `json:"description"`
-	Enum        *[]string              `json:"enum"`
+	Enum        []string               `json:"enum"`
 	EnumType    string                 `json:"enumType"`
 	Properties  map[string]*ApiField   `json:"properties"`
 	X           map[string]interface{} `json:"-"`
@@ -46,29 +48,57 @@ type ApiField struct {
 // Endpoint variation (by method)
 type ApiOperation struct {
 	ApiStatus        *ApiStatus             `json:"apiStatus"`
-	HttpMethod       string                 `json:"httpMethod"`
-	Parameters       *[]*ApiParameter       `json:"parameters"`
+	HttpMethod       ApiHttpMethod          `json:"httpMethod"`
+	Parameters       []*ApiParameter        `json:"parameters"`
 	ResponseType     string                 `json:"responseType"`
 	NoAuthentication bool                   `json:"noAuthentication"`
 	Description      string                 `json:"description"`
-	Scopes           *[]string              `json:"scopes"`
+	Scopes           []string               `json:"scopes"`
 	X                map[string]interface{} `json:"-"`
 }
+
+type ApiHttpMethod string
+
+const (
+	GET    ApiHttpMethod = "GET"
+	POST                 = "POST"
+	PUT                  = "PUT"
+	DELETE               = "DELETE"
+)
 
 // Endpoint input parameter description
 type ApiParameter struct {
 	Name        string                 `json:"name"`
 	DataType    string                 `json:"dataType"`
-	ParamType   string                 `json:"paramType"`
+	ParamType   ParamTypeEnum          `json:"paramType"`
 	FullType    string                 `json:"fullType"`
 	Required    bool                   `json:"required"`
 	Description string                 `json:"description"`
 	X           map[string]interface{} `json:"-"`
 }
 
+type ParamTypeEnum string
+
+const (
+	BODY  ParamTypeEnum = "body"
+	QUERY               = "query"
+	PATH                = "path"
+)
+
 // Api status description (beta, stable, ...)
 type ApiStatus struct {
-	Description string                 `json:"description"`
-	Value       string                 `json:"value"`
-	X           map[string]interface{} `json:"-"`
+	Description    string                 `json:"description"`
+	Value          ApiStatusValueEnum     `json:"value"`
+	DeprecatedDate *time.Time             `json:"deprecatedDate"`
+	DeletionDate   *time.Time             `json:"deletionDate"`
+	Replacement    string                 `json:"replacement"`
+	X              map[string]interface{} `json:"-"`
 }
+
+type ApiStatusValueEnum string
+
+const (
+	DEPRECATED ApiStatusValueEnum = "DEPRECATED"
+	BETA                          = "BETA"
+	PRODUCTION                    = "PRODUCTION"
+)

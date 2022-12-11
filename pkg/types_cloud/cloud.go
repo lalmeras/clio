@@ -91,9 +91,7 @@ const (
 	Cloud_ColdArchiveContainerStatusEnum_archived Cloud_ColdArchiveContainerStatusEnum = "archived"
 	Cloud_ColdArchiveContainerStatusEnum_archiving  = "archiving"
 	Cloud_ColdArchiveContainerStatusEnum_deleting  = "deleting"
-	Cloud_ColdArchiveContainerStatusEnum_draining  = "draining"
 	Cloud_ColdArchiveContainerStatusEnum_flushed  = "flushed"
-	Cloud_ColdArchiveContainerStatusEnum_locked  = "locked"
 	Cloud_ColdArchiveContainerStatusEnum_none  = "none"
 	Cloud_ColdArchiveContainerStatusEnum_restored  = "restored"
 	Cloud_ColdArchiveContainerStatusEnum_restoring  = "restoring"
@@ -1806,6 +1804,7 @@ const (
 	Cloudkube_VersionEnum__122  = "1.22"
 	Cloudkube_VersionEnum__123  = "1.23"
 	Cloudkube_VersionEnum__124  = "1.24"
+	Cloudkube_VersionEnum__125  = "1.25"
 )
 
 type Cloudloadbalancing_AssociateFloatingIp struct {
@@ -2694,6 +2693,7 @@ const (
 	Cloudprojectai_InfoCodeEnum_APP_STOPPING  = "APP_STOPPING"
 	Cloudprojectai_InfoCodeEnum_COMPATIBILITY  = "COMPATIBILITY"
 	Cloudprojectai_InfoCodeEnum_DATASYNC_AUTHENTICATE_FAILED  = "DATASYNC_AUTHENTICATE_FAILED"
+	Cloudprojectai_InfoCodeEnum_DATASYNC_DATA_STORE_NOT_FOUND  = "DATASYNC_DATA_STORE_NOT_FOUND"
 	Cloudprojectai_InfoCodeEnum_DATASYNC_DONE  = "DATASYNC_DONE"
 	Cloudprojectai_InfoCodeEnum_DATASYNC_ERROR  = "DATASYNC_ERROR"
 	Cloudprojectai_InfoCodeEnum_DATASYNC_FAILED  = "DATASYNC_FAILED"
@@ -2722,6 +2722,7 @@ const (
 	Cloudprojectai_InfoCodeEnum_JOB_QUEUED  = "JOB_QUEUED"
 	Cloudprojectai_InfoCodeEnum_JOB_REGISTRY_UNAVAILABLE  = "JOB_REGISTRY_UNAVAILABLE"
 	Cloudprojectai_InfoCodeEnum_JOB_RUNNING  = "JOB_RUNNING"
+	Cloudprojectai_InfoCodeEnum_JOB_SYNC_FAILED  = "JOB_SYNC_FAILED"
 	Cloudprojectai_InfoCodeEnum_JOB_TIMEOUT  = "JOB_TIMEOUT"
 	Cloudprojectai_InfoCodeEnum_NOTEBOOK_FAILED  = "NOTEBOOK_FAILED"
 	Cloudprojectai_InfoCodeEnum_NOTEBOOK_FAILED_WITH_MESSAGE  = "NOTEBOOK_FAILED_WITH_MESSAGE"
@@ -2732,6 +2733,7 @@ const (
 	Cloudprojectai_InfoCodeEnum_NOTEBOOK_STARTING  = "NOTEBOOK_STARTING"
 	Cloudprojectai_InfoCodeEnum_NOTEBOOK_STOPPED  = "NOTEBOOK_STOPPED"
 	Cloudprojectai_InfoCodeEnum_NOTEBOOK_STOPPING  = "NOTEBOOK_STOPPING"
+	Cloudprojectai_InfoCodeEnum_NOTEBOOK_SYNC_FAILED  = "NOTEBOOK_SYNC_FAILED"
 )
 
 type Cloudprojectai_Label struct {
@@ -3070,6 +3072,7 @@ const (
 	Cloudprojectaijob_JobStateEnum_PENDING  = "PENDING"
 	Cloudprojectaijob_JobStateEnum_QUEUED  = "QUEUED"
 	Cloudprojectaijob_JobStateEnum_RUNNING  = "RUNNING"
+	Cloudprojectaijob_JobStateEnum_SYNC_FAILED  = "SYNC_FAILED"
 	Cloudprojectaijob_JobStateEnum_TIMEOUT  = "TIMEOUT"
 )
 
@@ -3148,6 +3151,7 @@ type Cloudprojectainotebook_NotebookEnv struct {
 
 type Cloudprojectainotebook_NotebookSpec struct {
 	Env           Cloudprojectainotebook_NotebookEnv  `json:"env"`
+	EnvVars       []Cloudprojectaijob_JobEnv          `json:"envVars"`
 	Flavor        string                              `json:"flavor"`
 	Labels        map[string]string                   `json:"labels"`
 	Name          string                              `json:"name"`
@@ -3161,6 +3165,7 @@ type Cloudprojectainotebook_NotebookSpec struct {
 
 type Cloudprojectainotebook_NotebookSpecInput struct {
 	Env           Cloudprojectainotebook_NotebookEnv  `json:"env"`
+	EnvVars       []Cloudprojectaijob_JobEnv          `json:"envVars"`
 	Labels        map[string]string                   `json:"labels"`
 	Name          string                              `json:"name"`
 	Region        string                              `json:"region"`
@@ -3179,6 +3184,7 @@ const (
 	Cloudprojectainotebook_NotebookStateEnum_STARTING  = "STARTING"
 	Cloudprojectainotebook_NotebookStateEnum_STOPPED  = "STOPPED"
 	Cloudprojectainotebook_NotebookStateEnum_STOPPING  = "STOPPING"
+	Cloudprojectainotebook_NotebookStateEnum_SYNC_FAILED  = "SYNC_FAILED"
 )
 
 type Cloudprojectainotebook_NotebookStatus struct {
@@ -3413,6 +3419,14 @@ type Cloudprojectaitoken_TokenStatus struct {
 	Version int64  `json:"version"`
 }
 
+type Cloudprojectaivolume_DataStore struct {
+	Alias     string `json:"alias"`
+	Archive   string `json:"archive"`
+	Container string `json:"container"`
+	Internal  bool   `json:"internal"`
+	Prefix    string `json:"prefix"`
+}
+
 type Cloudprojectaivolume_DataSync struct {
 	CreatedAt time.Time                           `json:"createdAt"`
 	Id        string                              `json:"id"`
@@ -3440,6 +3454,7 @@ const (
 type Cloudprojectaivolume_DataSyncSpec struct {
 	Direction Cloudprojectaivolume_DataSyncEnum `json:"direction"`
 	Manual    bool                              `json:"manual"`
+	Volume    string                            `json:"volume"`
 }
 
 type Cloudprojectaivolume_DataSyncStateEnum string
@@ -3501,6 +3516,8 @@ type Cloudprojectaivolume_Standalone struct {
 type Cloudprojectaivolume_Volume struct {
 	Cache              bool                                `json:"cache"`
 	Container          string                              `json:"container"`
+	DataStore          Cloudprojectaivolume_DataStore      `json:"dataStore"`
+	Id                 string                              `json:"id"`
 	MountPath          string                              `json:"mountPath"`
 	Permission         Cloudprojectai_VolumePermissionEnum `json:"permission"`
 	Prefix             string                              `json:"prefix"`
@@ -3509,6 +3526,7 @@ type Cloudprojectaivolume_Volume struct {
 	PublicSwift        Cloudprojectaivolume_PublicSwift    `json:"publicSwift"`
 	Region             string                              `json:"region"`
 	Standalone         Cloudprojectaivolume_Standalone     `json:"standalone"`
+	TargetDataStore    Cloudprojectaivolume_DataStore      `json:"targetDataStore"`
 	TargetPrivateSwift Cloudprojectaivolume_PrivateSwift   `json:"targetPrivateSwift"`
 }
 
@@ -3544,6 +3562,18 @@ type CloudprojectdataProcessing_CapabilitiesEngineParameter struct {
 	Validator   CloudprojectdataProcessing_ParameterValidator `json:"validator"`
 }
 
+type CloudprojectdataProcessing_CapabilitiesNotebookTemplate struct {
+	DriverCores            int64  `json:"driverCores"`
+	DriverMemory           int64  `json:"driverMemory"`
+	DriverMemoryOverhead   int64  `json:"driverMemoryOverhead"`
+	ExecutorCores          int64  `json:"executorCores"`
+	ExecutorMemory         int64  `json:"executorMemory"`
+	ExecutorMemoryOverhead int64  `json:"executorMemoryOverhead"`
+	ExecutorNumber         int64  `json:"executorNumber"`
+	Id                     int64  `json:"id"`
+	Name                   string `json:"name"`
+}
+
 type CloudprojectdataProcessing_CapabilitiesTemplate struct {
 	Cores  int64 `json:"cores"`
 	Id     int64 `json:"id"`
@@ -3567,6 +3597,65 @@ type CloudprojectdataProcessing_EngineVersion struct {
 	Description      string   `json:"description"`
 	Name             string   `json:"name"`
 }
+
+type CloudprojectdataProcessing_Info struct {
+	Code    CloudprojectdataProcessing_InfoCodeEnum `json:"code"`
+	Message string                                  `json:"message"`
+}
+
+type CloudprojectdataProcessing_InfoCodeEnum string
+const (
+	CloudprojectdataProcessing_InfoCodeEnum_APP_CREATE_ERROR CloudprojectdataProcessing_InfoCodeEnum = "APP_CREATE_ERROR"
+	CloudprojectdataProcessing_InfoCodeEnum_APP_ERROR  = "APP_ERROR"
+	CloudprojectdataProcessing_InfoCodeEnum_APP_FAILED  = "APP_FAILED"
+	CloudprojectdataProcessing_InfoCodeEnum_APP_INITIALIZING  = "APP_INITIALIZING"
+	CloudprojectdataProcessing_InfoCodeEnum_APP_INTERRUPTED_BY_PLATFORM  = "APP_INTERRUPTED_BY_PLATFORM"
+	CloudprojectdataProcessing_InfoCodeEnum_APP_QUEUED  = "APP_QUEUED"
+	CloudprojectdataProcessing_InfoCodeEnum_APP_RUNNING  = "APP_RUNNING"
+	CloudprojectdataProcessing_InfoCodeEnum_APP_SCALING  = "APP_SCALING"
+	CloudprojectdataProcessing_InfoCodeEnum_APP_STOPPED  = "APP_STOPPED"
+	CloudprojectdataProcessing_InfoCodeEnum_APP_STOPPING  = "APP_STOPPING"
+	CloudprojectdataProcessing_InfoCodeEnum_COMPATIBILITY  = "COMPATIBILITY"
+	CloudprojectdataProcessing_InfoCodeEnum_DATASYNC_AUTHENTICATE_FAILED  = "DATASYNC_AUTHENTICATE_FAILED"
+	CloudprojectdataProcessing_InfoCodeEnum_DATASYNC_DONE  = "DATASYNC_DONE"
+	CloudprojectdataProcessing_InfoCodeEnum_DATASYNC_ERROR  = "DATASYNC_ERROR"
+	CloudprojectdataProcessing_InfoCodeEnum_DATASYNC_FAILED  = "DATASYNC_FAILED"
+	CloudprojectdataProcessing_InfoCodeEnum_DATASYNC_INTERRUPTED  = "DATASYNC_INTERRUPTED"
+	CloudprojectdataProcessing_InfoCodeEnum_DATASYNC_INVALID_CONTAINER  = "DATASYNC_INVALID_CONTAINER"
+	CloudprojectdataProcessing_InfoCodeEnum_DATASYNC_QUEUED  = "DATASYNC_QUEUED"
+	CloudprojectdataProcessing_InfoCodeEnum_DATASYNC_RETRY_ERROR  = "DATASYNC_RETRY_ERROR"
+	CloudprojectdataProcessing_InfoCodeEnum_DATASYNC_RUNNING  = "DATASYNC_RUNNING"
+	CloudprojectdataProcessing_InfoCodeEnum_JOB_CREATE_CONTAINER_CONFIG_ERROR  = "JOB_CREATE_CONTAINER_CONFIG_ERROR"
+	CloudprojectdataProcessing_InfoCodeEnum_JOB_CREATE_CONTAINER_ERROR  = "JOB_CREATE_CONTAINER_ERROR"
+	CloudprojectdataProcessing_InfoCodeEnum_JOB_DONE  = "JOB_DONE"
+	CloudprojectdataProcessing_InfoCodeEnum_JOB_ERROR  = "JOB_ERROR"
+	CloudprojectdataProcessing_InfoCodeEnum_JOB_EVICTED  = "JOB_EVICTED"
+	CloudprojectdataProcessing_InfoCodeEnum_JOB_FAILED  = "JOB_FAILED"
+	CloudprojectdataProcessing_InfoCodeEnum_JOB_FAILED_WITH_MESSAGE  = "JOB_FAILED_WITH_MESSAGE"
+	CloudprojectdataProcessing_InfoCodeEnum_JOB_FINALIZING  = "JOB_FINALIZING"
+	CloudprojectdataProcessing_InfoCodeEnum_JOB_IMAGE_INSPECT_ERROR  = "JOB_IMAGE_INSPECT_ERROR"
+	CloudprojectdataProcessing_InfoCodeEnum_JOB_IMAGE_PULL  = "JOB_IMAGE_PULL"
+	CloudprojectdataProcessing_InfoCodeEnum_JOB_IMAGE_PULL_BACKOFF  = "JOB_IMAGE_PULL_BACKOFF"
+	CloudprojectdataProcessing_InfoCodeEnum_JOB_INITIALIZING  = "JOB_INITIALIZING"
+	CloudprojectdataProcessing_InfoCodeEnum_JOB_INTERRUPTED  = "JOB_INTERRUPTED"
+	CloudprojectdataProcessing_InfoCodeEnum_JOB_INTERRUPTED_BY_PLATFORM  = "JOB_INTERRUPTED_BY_PLATFORM"
+	CloudprojectdataProcessing_InfoCodeEnum_JOB_INTERRUPTING  = "JOB_INTERRUPTING"
+	CloudprojectdataProcessing_InfoCodeEnum_JOB_INVALID_IMAGE_NAME  = "JOB_INVALID_IMAGE_NAME"
+	CloudprojectdataProcessing_InfoCodeEnum_JOB_PENDING  = "JOB_PENDING"
+	CloudprojectdataProcessing_InfoCodeEnum_JOB_QUEUED  = "JOB_QUEUED"
+	CloudprojectdataProcessing_InfoCodeEnum_JOB_REGISTRY_UNAVAILABLE  = "JOB_REGISTRY_UNAVAILABLE"
+	CloudprojectdataProcessing_InfoCodeEnum_JOB_RUNNING  = "JOB_RUNNING"
+	CloudprojectdataProcessing_InfoCodeEnum_JOB_TIMEOUT  = "JOB_TIMEOUT"
+	CloudprojectdataProcessing_InfoCodeEnum_NOTEBOOK_FAILED  = "NOTEBOOK_FAILED"
+	CloudprojectdataProcessing_InfoCodeEnum_NOTEBOOK_FAILED_WITH_MESSAGE  = "NOTEBOOK_FAILED_WITH_MESSAGE"
+	CloudprojectdataProcessing_InfoCodeEnum_NOTEBOOK_FINALIZING  = "NOTEBOOK_FINALIZING"
+	CloudprojectdataProcessing_InfoCodeEnum_NOTEBOOK_INITIALIZING  = "NOTEBOOK_INITIALIZING"
+	CloudprojectdataProcessing_InfoCodeEnum_NOTEBOOK_PENDING  = "NOTEBOOK_PENDING"
+	CloudprojectdataProcessing_InfoCodeEnum_NOTEBOOK_RUNNING  = "NOTEBOOK_RUNNING"
+	CloudprojectdataProcessing_InfoCodeEnum_NOTEBOOK_STARTING  = "NOTEBOOK_STARTING"
+	CloudprojectdataProcessing_InfoCodeEnum_NOTEBOOK_STOPPED  = "NOTEBOOK_STOPPED"
+	CloudprojectdataProcessing_InfoCodeEnum_NOTEBOOK_STOPPING  = "NOTEBOOK_STOPPING"
+)
 
 type CloudprojectdataProcessing_Job struct {
 	ContainerName    string                                       `json:"containerName"`
@@ -3623,6 +3712,49 @@ const (
 	CloudprojectdataProcessing_StatusEnum_TERMINATED  = "TERMINATED"
 	CloudprojectdataProcessing_StatusEnum_UNKNOWN  = "UNKNOWN"
 )
+
+type CloudprojectdataProcessingnotebook_Capability struct {
+	AvailableVersions []CloudprojectdataProcessing_EngineVersion                `json:"availableVersions"`
+	Name              string                                                    `json:"name"`
+	Templates         []CloudprojectdataProcessing_CapabilitiesNotebookTemplate `json:"templates"`
+}
+
+type CloudprojectdataProcessingnotebook_Notebook struct {
+	Id        string                                            `json:"id"`
+	Spec      CloudprojectdataProcessingnotebook_NotebookSpec   `json:"spec"`
+	Status    CloudprojectdataProcessingnotebook_NotebookStatus `json:"status"`
+	UpdatedAt time.Time                                         `json:"updatedAt"`
+}
+
+type CloudprojectdataProcessingnotebook_NotebookEnv struct {
+	EngineName    string `json:"engineName"`
+	EngineVersion string `json:"engineVersion"`
+}
+
+type CloudprojectdataProcessingnotebook_NotebookSpec struct {
+	Env    CloudprojectdataProcessingnotebook_NotebookEnv `json:"env"`
+	Name   string                                         `json:"name"`
+	Region string                                         `json:"region"`
+}
+
+type CloudprojectdataProcessingnotebook_NotebookStateEnum string
+const (
+	CloudprojectdataProcessingnotebook_NotebookStateEnum_DELETING CloudprojectdataProcessingnotebook_NotebookStateEnum = "DELETING"
+	CloudprojectdataProcessingnotebook_NotebookStateEnum_FAILED  = "FAILED"
+	CloudprojectdataProcessingnotebook_NotebookStateEnum_RUNNING  = "RUNNING"
+	CloudprojectdataProcessingnotebook_NotebookStateEnum_STARTING  = "STARTING"
+	CloudprojectdataProcessingnotebook_NotebookStateEnum_STOPPED  = "STOPPED"
+	CloudprojectdataProcessingnotebook_NotebookStateEnum_STOPPING  = "STOPPING"
+)
+
+type CloudprojectdataProcessingnotebook_NotebookStatus struct {
+	Duration      int64                                                `json:"duration"`
+	Info          CloudprojectdataProcessing_Info                      `json:"info"`
+	LastStartedAt time.Time                                            `json:"lastStartedAt"`
+	LastStoppedAt time.Time                                            `json:"lastStoppedAt"`
+	State         CloudprojectdataProcessingnotebook_NotebookStateEnum `json:"state"`
+	Url           string                                               `json:"url"`
+}
 
 type Cloudprojectdatabase_Availability struct {
 	Backup              Cloudprojectdatabase_BackupTypeEnum         `json:"backup"`
@@ -3694,27 +3826,22 @@ const (
 )
 
 type Cloudprojectdatabase_Service struct {
-	BackupTime        time.Time                                     `json:"backupTime"`
-	CreatedAt         time.Time                                     `json:"createdAt"`
-	Description       string                                        `json:"description"`
-	Disk              Cloudprojectdatabaseservice_Disk              `json:"disk"`
-	Domain            string                                        `json:"domain"`
-	Endpoints         []Cloudprojectdatabaseservice_Endpoint        `json:"endpoints"`
-	Engine            Cloudprojectdatabase_EngineEnum               `json:"engine"`
-	Flavor            string                                        `json:"flavor"`
-	Id                string                                        `json:"id"`
-	MaintenanceTime   time.Time                                     `json:"maintenanceTime"`
-	MaintenanceWindow Cloudprojectdatabaseservice_MaintenanceWindow `json:"maintenanceWindow"`
-	NetworkId         string                                        `json:"networkId"`
-	NetworkType       Cloudprojectdatabase_NetworkTypeEnum          `json:"networkType"`
-	NodeNumber        int64                                         `json:"nodeNumber"`
-	Plan              string                                        `json:"plan"`
-	Port              int64                                         `json:"port"`
-	SslMode           string                                        `json:"sslMode"`
-	Status            Cloudprojectdatabase_StatusEnum               `json:"status"`
-	SubnetId          string                                        `json:"subnetId"`
-	Uri               string                                        `json:"uri"`
-	Version           string                                        `json:"version"`
+	BackupTime      time.Time                              `json:"backupTime"`
+	CreatedAt       time.Time                              `json:"createdAt"`
+	Description     string                                 `json:"description"`
+	Disk            Cloudprojectdatabaseservice_Disk       `json:"disk"`
+	Endpoints       []Cloudprojectdatabaseservice_Endpoint `json:"endpoints"`
+	Engine          Cloudprojectdatabase_EngineEnum        `json:"engine"`
+	Flavor          string                                 `json:"flavor"`
+	Id              string                                 `json:"id"`
+	MaintenanceTime time.Time                              `json:"maintenanceTime"`
+	NetworkId       string                                 `json:"networkId"`
+	NetworkType     Cloudprojectdatabase_NetworkTypeEnum   `json:"networkType"`
+	NodeNumber      int64                                  `json:"nodeNumber"`
+	Plan            string                                 `json:"plan"`
+	Status          Cloudprojectdatabase_StatusEnum        `json:"status"`
+	SubnetId        string                                 `json:"subnetId"`
+	Version         string                                 `json:"version"`
 }
 
 type Cloudprojectdatabase_ServiceCreation struct {
@@ -3838,28 +3965,23 @@ type Cloudprojectdatabasekafka_Permissions struct {
 }
 
 type Cloudprojectdatabasekafka_Service struct {
-	BackupTime        time.Time                                     `json:"backupTime"`
-	CreatedAt         time.Time                                     `json:"createdAt"`
-	Description       string                                        `json:"description"`
-	Disk              Cloudprojectdatabaseservice_Disk              `json:"disk"`
-	Domain            string                                        `json:"domain"`
-	Endpoints         []Cloudprojectdatabaseservice_Endpoint        `json:"endpoints"`
-	Engine            Cloudprojectdatabase_EngineEnum               `json:"engine"`
-	Flavor            string                                        `json:"flavor"`
-	Id                string                                        `json:"id"`
-	MaintenanceTime   time.Time                                     `json:"maintenanceTime"`
-	MaintenanceWindow Cloudprojectdatabaseservice_MaintenanceWindow `json:"maintenanceWindow"`
-	NetworkId         string                                        `json:"networkId"`
-	NetworkType       Cloudprojectdatabase_NetworkTypeEnum          `json:"networkType"`
-	NodeNumber        int64                                         `json:"nodeNumber"`
-	Plan              string                                        `json:"plan"`
-	Port              int64                                         `json:"port"`
-	RestApi           bool                                          `json:"restApi"`
-	SslMode           string                                        `json:"sslMode"`
-	Status            Cloudprojectdatabase_StatusEnum               `json:"status"`
-	SubnetId          string                                        `json:"subnetId"`
-	Uri               string                                        `json:"uri"`
-	Version           string                                        `json:"version"`
+	BackupTime      time.Time                              `json:"backupTime"`
+	CreatedAt       time.Time                              `json:"createdAt"`
+	Description     string                                 `json:"description"`
+	Disk            Cloudprojectdatabaseservice_Disk       `json:"disk"`
+	Endpoints       []Cloudprojectdatabaseservice_Endpoint `json:"endpoints"`
+	Engine          Cloudprojectdatabase_EngineEnum        `json:"engine"`
+	Flavor          string                                 `json:"flavor"`
+	Id              string                                 `json:"id"`
+	MaintenanceTime time.Time                              `json:"maintenanceTime"`
+	NetworkId       string                                 `json:"networkId"`
+	NetworkType     Cloudprojectdatabase_NetworkTypeEnum   `json:"networkType"`
+	NodeNumber      int64                                  `json:"nodeNumber"`
+	Plan            string                                 `json:"plan"`
+	RestApi         bool                                   `json:"restApi"`
+	Status          Cloudprojectdatabase_StatusEnum        `json:"status"`
+	SubnetId        string                                 `json:"subnetId"`
+	Version         string                                 `json:"version"`
 }
 
 type Cloudprojectdatabasekafka_Topic struct {
@@ -4102,29 +4224,23 @@ type Cloudprojectdatabaseopensearch_Permissions struct {
 }
 
 type Cloudprojectdatabaseopensearch_Service struct {
-	AclsEnabled       bool                                                 `json:"aclsEnabled"`
-	AdditionalUris    Cloudprojectdatabaseopensearchservice_AdditionalUris `json:"additionalUris"`
-	BackupTime        time.Time                                            `json:"backupTime"`
-	CreatedAt         time.Time                                            `json:"createdAt"`
-	Description       string                                               `json:"description"`
-	Disk              Cloudprojectdatabaseservice_Disk                     `json:"disk"`
-	Domain            string                                               `json:"domain"`
-	Endpoints         []Cloudprojectdatabaseservice_Endpoint               `json:"endpoints"`
-	Engine            Cloudprojectdatabase_EngineEnum                      `json:"engine"`
-	Flavor            string                                               `json:"flavor"`
-	Id                string                                               `json:"id"`
-	MaintenanceTime   time.Time                                            `json:"maintenanceTime"`
-	MaintenanceWindow Cloudprojectdatabaseservice_MaintenanceWindow        `json:"maintenanceWindow"`
-	NetworkId         string                                               `json:"networkId"`
-	NetworkType       Cloudprojectdatabase_NetworkTypeEnum                 `json:"networkType"`
-	NodeNumber        int64                                                `json:"nodeNumber"`
-	Plan              string                                               `json:"plan"`
-	Port              int64                                                `json:"port"`
-	SslMode           string                                               `json:"sslMode"`
-	Status            Cloudprojectdatabase_StatusEnum                      `json:"status"`
-	SubnetId          string                                               `json:"subnetId"`
-	Uri               string                                               `json:"uri"`
-	Version           string                                               `json:"version"`
+	AclsEnabled     bool                                   `json:"aclsEnabled"`
+	BackupTime      time.Time                              `json:"backupTime"`
+	CreatedAt       time.Time                              `json:"createdAt"`
+	Description     string                                 `json:"description"`
+	Disk            Cloudprojectdatabaseservice_Disk       `json:"disk"`
+	Endpoints       []Cloudprojectdatabaseservice_Endpoint `json:"endpoints"`
+	Engine          Cloudprojectdatabase_EngineEnum        `json:"engine"`
+	Flavor          string                                 `json:"flavor"`
+	Id              string                                 `json:"id"`
+	MaintenanceTime time.Time                              `json:"maintenanceTime"`
+	NetworkId       string                                 `json:"networkId"`
+	NetworkType     Cloudprojectdatabase_NetworkTypeEnum   `json:"networkType"`
+	NodeNumber      int64                                  `json:"nodeNumber"`
+	Plan            string                                 `json:"plan"`
+	Status          Cloudprojectdatabase_StatusEnum        `json:"status"`
+	SubnetId        string                                 `json:"subnetId"`
+	Version         string                                 `json:"version"`
 }
 
 type Cloudprojectdatabaseopensearch_User struct {
@@ -4152,10 +4268,6 @@ type Cloudprojectdatabaseopensearch_UserWithPassword struct {
 	Password  string                                   `json:"password"`
 	Status    Cloudprojectdatabase_StatusEnum          `json:"status"`
 	Username  string                                   `json:"username"`
-}
-
-type Cloudprojectdatabaseopensearchservice_AdditionalUris struct {
-	Kibana string `json:"kibana"`
 }
 
 type Cloudprojectdatabasepostgresql_ConnectionPool struct {
@@ -4331,11 +4443,6 @@ type Cloudprojectdatabaseservice_Maintenance struct {
 	Status      Cloudprojectdatabaseservicemaintenance_StatusEnum `json:"status"`
 }
 
-type Cloudprojectdatabaseservice_MaintenanceWindow struct {
-	End   time.Time `json:"end"`
-	Start time.Time `json:"start"`
-}
-
 type Cloudprojectdatabaseservice_Metric struct {
 	Metrics []Cloudprojectdatabaseservice_HostMetric   `json:"metrics"`
 	Name    string                                     `json:"name"`
@@ -4461,9 +4568,8 @@ type Cloudprojectdatabaseservice_UserWithRoles struct {
 }
 
 type Cloudprojectdatabaseservice_UserWithRolesCreation struct {
-	Name     string   `json:"name"`
-	Password string   `json:"password"`
-	Roles    []string `json:"roles"`
+	Name  string   `json:"name"`
+	Roles []string `json:"roles"`
 }
 
 type Cloudprojectdatabaseservicecreation_BackupFork struct {
@@ -4580,6 +4686,7 @@ const (
 	Cloudprojectdatabaseservicemaintenance_StatusEnum_APPLIED Cloudprojectdatabaseservicemaintenance_StatusEnum = "APPLIED"
 	Cloudprojectdatabaseservicemaintenance_StatusEnum_APPLYING  = "APPLYING"
 	Cloudprojectdatabaseservicemaintenance_StatusEnum_ERROR  = "ERROR"
+	Cloudprojectdatabaseservicemaintenance_StatusEnum_PENDING  = "PENDING"
 	Cloudprojectdatabaseservicemaintenance_StatusEnum_SCHEDULED  = "SCHEDULED"
 )
 
@@ -5690,6 +5797,8 @@ type CmdParameters struct {
 	GET_backupWorkflowId_string string
 	GET_certificateId_uuid string
 	GET_clusterId_uuid string
+	GET_compatibleWithEditor_string string
+	GET_compatibleWithFramework_string string
 	GET_connectionPoolId_uuid string
 	GET_connectorId_uuid string
 	GET_containerId_string string

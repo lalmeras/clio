@@ -29,7 +29,7 @@ func register(services []*types.ApiDescription) {
 
 func Run(c *cobra.Command, args []string, service *types.ApiDescription, operation *types.ApiOperation) {
 	url := service.Path
-	for _, p := range *operation.Parameters {
+	for _, p := range operation.Parameters {
 		if p.ParamType == "path" {
 			url = strings.ReplaceAll(url, fmt.Sprintf("{%s}", p.Name), reflect.ValueOf(parameters).Elem().FieldByName(util.VarName(operation, p)).String())
 		}
@@ -53,7 +53,7 @@ func addCommand(service *types.ApiDescription, operation *types.ApiOperation) {
 		Run:   func(c *cobra.Command, args []string) { Run(c, args, service, operation) },
 	}
 	dynamicCommand.AddCommand(command)
-	for _, p := range *operation.Parameters {
+	for _, p := range operation.Parameters {
 		addParameter(command, service, operation, p)
 	}
 }
@@ -79,10 +79,10 @@ func addParameter(command *cobra.Command, service *types.ApiDescription, operati
 	panic(fmt.Sprintf("Type not known %s\n", parameter.DataType))
 }
 
-func Get(operations *[]*types.ApiOperation) (*types.ApiOperation, bool) {
-	for _, v := range *operations {
+func Get(operations []*types.ApiOperation) (*types.ApiOperation, bool) {
+	for _, v := range operations {
 		if v.HttpMethod == "GET" {
-			for _, p := range *v.Parameters {
+			for _, p := range v.Parameters {
 				if !slices.Contains(types.SUPPORTED_TYPES, p.DataType) {
 					return nil, false
 				}
