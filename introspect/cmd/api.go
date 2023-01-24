@@ -24,33 +24,19 @@ const ROOT_URL = "https://api.ovh.com/"
 //go:embed types.gotmpl
 var STRUCT_TEMPLATE string
 
-func Execute() {
-	if err := apiCmd.Execute(); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-}
-
-// api command group
-var apiCmd = &cobra.Command{
-	Use:   "api",
-	Short: "API introspection",
-}
-
-// api download command
-var downloadCmd = &cobra.Command{
-	Use:   "download",
-	Short: "Download API descriptor",
-	Args:  cobra.ExactArgs(1),
-	Run:   ApiCommand,
-}
-
 // command arguments
 var version string
 
 // load command definition
-func init() {
-	apiCmd.AddCommand(downloadCmd)
+func ApiCommand(rootCmd *cobra.Command) {
+	// api download command
+	var downloadCmd = &cobra.Command{
+		Use:   "download",
+		Short: "Download API descriptor",
+		Args:  cobra.ExactArgs(1),
+		Run:   ApiRun,
+	}
+	rootCmd.AddCommand(downloadCmd)
 	downloadCmd.Flags().StringVarP(&version, "version", "v", "1.0", "API version to load")
 	downloadCmd.MarkFlagRequired("api")
 }
@@ -85,7 +71,7 @@ func FilterModels(models map[string]*types.ApiModel) []string {
 }
 
 // download and extract api definition, then generate go types and variables for arguments handling.
-func ApiCommand(cmd *cobra.Command, args []string) {
+func ApiRun(cmd *cobra.Command, args []string) {
 	result := DownloadDescription(args[0], "1.0")
 	sortedModels := FilterModels(result.Models)
 
