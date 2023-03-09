@@ -6,6 +6,12 @@ import (
 	"strings"
 )
 
+// Template generation: main model
+// - Name: API name
+// - Types: type name to description map
+// - SortedModels: ordered types names
+// - Imports: needed imports
+// - Parameters: TODO
 type ApiTemplate struct {
 	Name         string
 	Types        map[string]*ApiModel
@@ -14,6 +20,12 @@ type ApiTemplate struct {
 	Parameters   ApiOperationsParameters
 }
 
+// Template generation: parameter model
+// - Order: parameter name used for ordering
+// - VarName: parameter global variable name
+// - VarType: parameter go type
+// - Operation: TODO
+// - Parameter: TODO
 type ApiOperationParameter struct {
 	Order     string
 	VarName   string
@@ -24,17 +36,25 @@ type ApiOperationParameter struct {
 
 type ApiOperationsParameters []*ApiOperationParameter
 
+// Template generation: parameter ordering
 func (self ApiOperationsParameters) Less(i, j int) bool { return self[i].Order < self[j].Order }
 
+// Generate json tag to control type serialization/deserialization
+// - name: json field name
 func (self *ApiTemplate) JsonTag(name string) string {
 	return fmt.Sprintf("`json:\"%s\"`", name)
 }
 
+// Generate a valid go type name or an ApiModel (replace forbidden chars, capitalize first letter)
+// - model: type we want to generate a go type name for
 func (self *ApiTemplate) GoTypeName(model *ApiModel) string {
 	result := fmt.Sprintf("%s_%s", strings.ReplaceAll(model.Namespace, ".", ""), model.ID)
 	return strings.ToUpper(result[0:1]) + result[1:]
 }
 
+// Generate valid go enumeration names (replace forbidden chars, concatenate with type name)
+// - model: enumerated type
+// - enumValue: json enumeration name we want to generate a go type name for
 func (self *ApiTemplate) GoEnumSymbol(model *ApiModel, enumValue string) string {
 	result := strings.ReplaceAll(enumValue, "-", "")
 	result = strings.ReplaceAll(result, ".", "")
@@ -47,11 +67,13 @@ func (self *ApiTemplate) GoEnumSymbol(model *ApiModel, enumValue string) string 
 	return self.GoTypeName(model) + "_" + result
 }
 
+// Generate a valid go name (replace forbidden chars, capitalize)
 func (self *ApiTemplate) GoName(name string, field *ApiField) string {
 	name = strings.ReplaceAll(name, "-", "")
 	return strings.ToUpper(name[0:1]) + name[1:]
 }
 
+// Generate a valid go type name, handling go native type mapping and list case
 func (self *ApiTemplate) GoType(models map[string]*ApiModel, name string, field *ApiField) string {
 	containedType := field.Type
 	var tt string
@@ -76,6 +98,7 @@ func (self *ApiTemplate) GoType(models map[string]*ApiModel, name string, field 
 	panic(fmt.Sprintf("Type %s cannot be mapped", field.Type))
 }
 
+// Generate type part for a struct field declaration, applying padding for alignment
 func (self *ApiTemplate) PadGoType(models map[string]*ApiModel, name string, field *ApiField, padding int) string {
 	goType := self.GoType(models, name, field)
 	if length := len(goType); length < padding {
@@ -84,6 +107,7 @@ func (self *ApiTemplate) PadGoType(models map[string]*ApiModel, name string, fie
 	return goType
 }
 
+// Generate name part for a struct field declaration, applying padding for alignment
 func (self *ApiTemplate) PadGoName(name string, field *ApiField, padding int) string {
 	goName := self.GoName(name, field)
 	if length := len(goName); length < padding {
@@ -92,6 +116,7 @@ func (self *ApiTemplate) PadGoName(name string, field *ApiField, padding int) st
 	return goName
 }
 
+// Compute padding for field names
 func (self *ApiTemplate) NamePadding(model *ApiModel) int {
 	max := 0
 	for name, val := range model.Properties {
@@ -102,6 +127,7 @@ func (self *ApiTemplate) NamePadding(model *ApiModel) int {
 	return max
 }
 
+// Compute padding for type names
 func (self *ApiTemplate) TypePadding(models map[string]*ApiModel, model *ApiModel) int {
 	max := 0
 	for name, field := range model.Properties {
@@ -112,6 +138,7 @@ func (self *ApiTemplate) TypePadding(models map[string]*ApiModel, model *ApiMode
 	return max
 }
 
+// Basic types
 var SUPPORTED_TYPES []string = []string{
 	"string",
 	"password",
@@ -120,8 +147,13 @@ var SUPPORTED_TYPES []string = []string{
 	"uuid",
 	"ipBlock",
 	"boolean",
+	"phoneNumber",
+	"macAddress",
+	"internationalPhoneNumber",
+	"coreTypes.AccountId:string",
 }
 
+// Native types mapping
 var GO_TYPES = map[string]string{
 	"string":                           "string",
 	"boolean":                          "bool",
@@ -144,4 +176,8 @@ var GO_TYPES = map[string]string{
 	"duration":                         "time.Duration",
 	"complexType.UnitAndValue<long>":   "types.UnitAndValueInt64",
 	"complexType.UnitAndValue<double>": "types.UnitAndValueFloat64",
+	"phoneNumber":                      "string",
+	"macAddress":                       "string",
+	"internationalPhoneNumber":         "string",
+	"coreTypes.AccountId:string":       "string",
 }

@@ -4,6 +4,18 @@ package types
 
 import "time"
 
+type ApiListDocument struct {
+	Apis     []*ApiItemDescription `json:"apis"`
+	BasePath string                `json:"basePath"`
+}
+
+type ApiItemDescription struct {
+	Path        string   `json:"path"`
+	Schema      string   `json:"schema"`
+	Format      []string `json:"format"`
+	Description string   `json:"description"`
+}
+
 // This is the root type of OVH API description
 type ApiDescriptionDocument struct {
 	ApiVersion   string                 `json:"apiversion"`

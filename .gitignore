@@ -16,3 +16,6 @@
 
 .env
 thunder-tests/
+
+# generated code
+pkg/types_*/

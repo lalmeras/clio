@@ -7,12 +7,13 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"path"
 	"sort"
 	"strings"
 	"text/template"
 
-	"github.com/lalmeras/clio/introspect/types"
 	"github.com/lalmeras/clio/introspect/util"
+	"github.com/lalmeras/clio/metamodel/types"
 	"github.com/spf13/cobra"
 	"golang.org/x/exp/maps"
 	"golang.org/x/exp/slices"
@@ -31,10 +32,10 @@ var version string
 func ApiCommand(rootCmd *cobra.Command) {
 	// api download command
 	var downloadCmd = &cobra.Command{
-		Use:   "download",
-		Short: "Download API descriptor",
-		Args:  cobra.ExactArgs(1),
-		Run:   ApiRun,
+		Use:   "generate",
+		Short: "Generate API descriptor modules",
+		Args:  cobra.ExactArgs(0),
+		Run:   ApisGenerate,
 	}
 	rootCmd.AddCommand(downloadCmd)
 	downloadCmd.Flags().StringVarP(&version, "version", "v", "1.0", "API version to load")
@@ -42,8 +43,20 @@ func ApiCommand(rootCmd *cobra.Command) {
 }
 
 // Download and decode an api description
-func DownloadDescription(name string, version string) *types.ApiDescriptionDocument {
-	url := ROOT_URL + version + "/" + name + ".json"
+func DownloadApiListDescription(version string) *types.ApiListDocument {
+	url := ROOT_URL + version + "/"
+	if resp, err := http.Get(url); err != nil {
+		panic(err)
+	} else {
+		var result types.ApiListDocument
+		defer resp.Body.Close()
+		json.NewDecoder(resp.Body).Decode(&result)
+		return &result
+	}
+}
+
+// Download and decode an api description
+func DownloadApiDescription(url string) *types.ApiDescriptionDocument {
 	if resp, err := http.Get(url); err != nil {
 		panic(err)
 	} else {
@@ -70,9 +83,28 @@ func FilterModels(models map[string]*types.ApiModel) []string {
 	return sortedModels
 }
 
+func ApisGenerate(cmd *cobra.Command, args []string) {
+	var skipped = []string{
+		"/connectivity", "/contact", "/dedicated/housing", "/dedicated/nasha",
+		"/dedicated/server", "/email/domain", "/hosting/privateDatabase",
+		"/hosting/web", "/ip", "/me", "/pack/xdsl", "/service", "/services",
+		"/store", "/telephony", "/vps", "/xdsl"}
+	result := DownloadApiListDescription("1.0")
+	for _, a := range result.Apis {
+		if slices.Contains(skipped, a.Path) {
+			fmt.Printf("Skipped service %s\n", a.Path)
+			continue
+		}
+		ApiGenerate(cmd, a.Path, result.BasePath+a.Path+".json")
+	}
+}
+
 // download and extract api definition, then generate go types and variables for arguments handling.
-func ApiRun(cmd *cobra.Command, args []string) {
-	result := DownloadDescription(args[0], "1.0")
+func ApiGenerate(cmd *cobra.Command, relativePath string, url string) {
+	basename := strings.ReplaceAll(relativePath[1:], "/", "_")
+
+	fmt.Printf("Generating %s\n", basename)
+	result := DownloadApiDescription(url)
 	sortedModels := FilterModels(result.Models)
 
 	// extract all parameters from api
@@ -99,13 +131,14 @@ func ApiRun(cmd *cobra.Command, args []string) {
 			}
 		}
 	}
-	fmt.Printf("%+v\n", parTypes)
 	// sort and deduplicate parameter list
 	sort.SliceStable(parameters, parameters.Less)
 	parameters = Unique(parameters)
 
 	// open generated target file to store template generation result
-	f, err := os.OpenFile(fmt.Sprintf("../pkg/types_%[1]s/%[1]s.go", args[0]), os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
+	filename := fmt.Sprintf("pkg/types_%[1]s/%[1]s.go", basename)
+	os.MkdirAll(path.Dir(filename), 0750)
+	f, err := os.OpenFile(filename, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
 	if err != nil {
 		panic(err)
 	}
@@ -113,7 +146,7 @@ func ApiRun(cmd *cobra.Command, args []string) {
 	buf := bufio.NewWriter(f)
 	template := template.Must(template.New("struct").Parse(STRUCT_TEMPLATE))
 	templateModel := types.ApiTemplate{
-		Name:         args[0],
+		Name:         basename,
 		SortedModels: sortedModels,
 		Types:        result.Models,
 		Imports:      []string{"time", "github.com/lalmeras/clio/pkg/types"},
@@ -123,6 +156,7 @@ func ApiRun(cmd *cobra.Command, args []string) {
 		panic(err)
 	}
 	buf.Flush()
+	fmt.Printf("Generated %s\n", basename)
 }
 
 // deduplicate parameters from a sorted parameters list

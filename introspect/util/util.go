@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/lalmeras/clio/introspect/types"
+	"github.com/lalmeras/clio/metamodel/types"
 	"github.com/ovh/go-ovh/ovh"
 )
 
@@ -36,7 +36,7 @@ func VarName(operation *types.ApiOperation, parameter *types.ApiParameter) strin
 }
 
 func VarType(operation *types.ApiOperation, parameter *types.ApiParameter) string {
-	if parameter.DataType == "string" || parameter.DataType == "password" || parameter.DataType == "ipBlock" || parameter.DataType == "datetime" || parameter.DataType == "uuid" {
+	if parameter.DataType == "string" || parameter.DataType == "password" || parameter.DataType == "ipBlock" || parameter.DataType == "datetime" || parameter.DataType == "uuid" || parameter.DataType == "phoneNumber" {
 		return "string"
 	}
 	if parameter.DataType == "long" {

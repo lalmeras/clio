@@ -16,7 +16,7 @@ func CloudCommand(rootCmd *cobra.Command) {
 
 func ListEndpoints(cobraCmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 	result := make([]string, 0)
-	desc := cmd.DownloadDescription("cloud", "1.0")
+	desc := cmd.DownloadApiDescription("https://api.ovh.com/1.0/cloud.json")
 	for _, a := range desc.Apis {
 		result = append(result, a.Path)
 	}

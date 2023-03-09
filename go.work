@@ -1,6 +1,7 @@
 go 1.19
 
 use (
-    ./introspect // github.com/lalmeras/clio/introspect
-    ./pkg // github.com/lalmeras/clio/pkg
+	./introspect // github.com/lalmeras/clio/introspect
+	./metamodel
+	./pkg // github.com/lalmeras/clio/pkg
 )
