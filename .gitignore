@@ -17,5 +17,5 @@
 .env
 thunder-tests/
 
-# generated code
-pkg/types_*/
+# generated openapi 3.1
+output/
