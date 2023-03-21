@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -8,19 +9,23 @@ import (
 	"path"
 	"strings"
 
-	"github.com/lalmeras/clio/typovh/openapi"
 	"github.com/lalmeras/clio/typovh/types"
+	"github.com/pb33f/libopenapi"
+	v3 "github.com/pb33f/libopenapi/datamodel/high/v3"
+	low "github.com/pb33f/libopenapi/datamodel/low"
+	v3low "github.com/pb33f/libopenapi/datamodel/low/v3"
 	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v3"
 )
 
 // root URL for OVH API
 const ROOT_URL = "https://api.ovh.com/"
 
-func Execute() {
+func execute() {
 	var genCmd = &cobra.Command{
 		Use:   "clio",
-		Short: "API introspection",
-		Run:   Generate,
+		Short: "Openapi 3 conversion",
+		RunE:  generate,
 		Args:  cobra.NoArgs,
 	}
 	if err := genCmd.Execute(); err != nil {
@@ -30,107 +35,133 @@ func Execute() {
 }
 
 func main() {
-	Execute()
+	execute()
 }
 
-func Generate(cmd *cobra.Command, args []string) {
+func generate(cmd *cobra.Command, args []string) error {
 	result := DownloadApiListDescription("1.0")
 	for _, a := range result.Apis {
-		ApiGenerate(cmd, a.Path, result.BasePath+a.Path+".json")
-	}
-}
-
-// download and extract api definition, then generate go types and variables for arguments handling.
-func ApiGenerate(cmd *cobra.Command, relativePath string, url string) {
-	result := DownloadApiDescription(url)
-	o := openapi.OpenAPI{
-		Openapi: "3.1",
-		Info: &openapi.Info{
-			Title:   "OVH API",
-			Summary: relativePath,
-			Version: result.ApiVersion,
-		},
-		Servers: []openapi.Server{
-			{Url: ROOT_URL + "1.0"},
-		},
-	}
-	paths := make(map[string]openapi.PathItem, 0)
-	for _, api := range result.Apis {
-		path := openapi.PathItem{}
-		path.Description = api.Description
-		for _, operation := range api.Operations {
-			op := openapi.Operation{
-				Description: operation.Description,
-				Summary:     operation.Description,
-				OperationId: api.Path + "-" + strings.ToLower(string(operation.HttpMethod)),
-			}
-			switch operation.HttpMethod {
-			case types.GET:
-				path.Get = &op
-				break
-			case types.POST:
-				path.Post = &op
-				break
-			case types.DELETE:
-				path.Delete = &op
-				break
-			case types.PUT:
-				path.Put = &op
-				break
-			}
-			params := make([]openapi.Parameter, 0)
-			for _, p := range operation.Parameters {
-				in := ""
-				switch p.ParamType {
-				case types.BODY:
-					op.RequestBody = &openapi.RequestBody{
-						Description: p.Description,
-						Content:     map[string]openapi.MediaType{"application/json": {}},
-						Required:    p.Required,
-					}
-					break
-				default:
-					in = "path"
-					if p.ParamType == types.QUERY {
-						in = "query"
-					}
-					param := openapi.Parameter{
-						Name:        p.Name,
-						Description: p.Description,
-						Required:    p.Required,
-						In:          in,
-					}
-					params = append(params, param)
-				}
-			}
-			op.Parameters = params
-			responses := map[string]openapi.Response{
-				"200": {
-					Content: map[string]openapi.MediaType{"application/json": {}},
-				},
-			}
-			op.Responses = responses
+		if err := openapiGenerate(cmd, a.Path, result.BasePath+a.Path+".yaml?format=openapi3"); err != nil {
+			return err
 		}
-		paths[api.Path] = path
 	}
-	o.Paths = paths
+	return nil
+}
 
-	outputPath := path.Join("output", relativePath+".json")
-	os.MkdirAll(path.Dir(outputPath), 0750)
-	file, err := os.OpenFile(outputPath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, os.ModePerm)
-	if err != nil {
-		panic(err)
-	}
-	defer file.Close()
-	enc := json.NewEncoder(file)
-	enc.SetIndent("", "  ")
-	err = enc.Encode(o)
-	if err != nil {
-		panic(err)
+// Update openapi3 description from OVH to append generated operationId (from path)
+func openapiGenerate(cmd *cobra.Command, relativePath string, url string) error {
+	if result, err := DownloadOpenapiDescription(url); err != nil {
+		return err
+	} else {
+		methodNames := []string{
+			"get",
+			"delete",
+			"head",
+			"options",
+			"patch",
+			"post",
+			"put",
+			"trace",
+		}
+		v3high, _ := result.BuildV3Model()
+		for path, pathItem := range v3high.Model.Paths.PathItems {
+			operations := listOperations(pathItem)
+			lowOperations := listLowOperations(pathItem)
+			for idx, operation := range operations {
+				lowOperation := lowOperations[idx]
+				methodName := methodNames[idx]
+				operationId := buildOperationId(path, methodName)
+				updateOperationId(operation, lowOperation, operationId)
+			}
+		}
+		if output, err := result.Serialize(); err != nil {
+			return err
+		} else {
+			outputPath := path.Join("output", relativePath+".yaml")
+			os.MkdirAll(path.Dir(outputPath), 0750)
+			if file, err := os.OpenFile(outputPath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, os.ModePerm); err != nil {
+				return err
+			} else {
+				defer file.Close()
+				_, err := file.Write(output)
+				return err
+			}
+		}
 	}
 }
 
-// Download and decode an api description
+// Order must be consistent across listMethodNames, listOperations, listLowOperations
+func listMethodNames() []string {
+	return []string{
+		"get",
+		"delete",
+		"head",
+		"options",
+		"patch",
+		"post",
+		"put",
+		"trace",
+	}
+}
+
+// Order must be consistent across listMethodNames, listOperations, listLowOperations
+func listOperations(pathItem *v3.PathItem) []*v3.Operation {
+	return []*v3.Operation{
+		pathItem.Get,
+		pathItem.Delete,
+		pathItem.Head,
+		pathItem.Options,
+		pathItem.Patch,
+		pathItem.Post,
+		pathItem.Put,
+		pathItem.Trace,
+	}
+}
+
+// Order must be consistent across listMethodNames, listOperations, listLowOperations
+func listLowOperations(pathItem *v3.PathItem) []low.NodeReference[*v3low.Operation] {
+	return []low.NodeReference[*v3low.Operation]{
+		pathItem.GoLow().Get,
+		pathItem.GoLow().Delete,
+		pathItem.GoLow().Head,
+		pathItem.GoLow().Options,
+		pathItem.GoLow().Patch,
+		pathItem.GoLow().Post,
+		pathItem.GoLow().Put,
+		pathItem.GoLow().Trace,
+	}
+}
+
+// Build and adapt operationId from path and http method name
+func buildOperationId(path string, methodName string) string {
+	operationId := path + "-" + methodName
+	if strings.HasPrefix(operationId, "/") {
+		operationId = operationId[1:]
+	}
+	operationId = strings.ReplaceAll(operationId, "/", "-")
+	// replace parameter name delimiters
+	operationId = strings.ReplaceAll(operationId, "{", "")
+	operationId = strings.ReplaceAll(operationId, "}", "")
+	return operationId
+}
+
+// Mutate an libopenapi document to add operationId field
+func updateOperationId(operation *v3.Operation, lowOperation low.NodeReference[*v3low.Operation], operationId string) {
+	if operation != nil {
+		if operation.GoLow().OperationId.IsEmpty() {
+			// no operationId; we need to add a yaml.Node
+			opContent := lowOperation.ValueNode.Content
+			opContent = append(opContent, &yaml.Node{Kind: yaml.ScalarNode, Value: "operationId"})
+			opContent = append(opContent, &yaml.Node{Kind: yaml.ScalarNode, Value: operationId})
+			lowOperation.ValueNode.Content = opContent
+		} else {
+			// operationId already here; we need to update it
+			operation.GoLow().OperationId.Mutate(operationId)
+		}
+	}
+}
+
+// Download and decode API listing
 func DownloadApiListDescription(version string) *types.ApiListDocument {
 	url := ROOT_URL + version + "/"
 	if resp, err := http.Get(url); err != nil {
@@ -143,14 +174,18 @@ func DownloadApiListDescription(version string) *types.ApiListDocument {
 	}
 }
 
-// Download and decode an api description
-func DownloadApiDescription(url string) *types.ApiDescriptionDocument {
+// Download and decode an openapi description
+func DownloadOpenapiDescription(url string) (libopenapi.Document, error) {
 	if resp, err := http.Get(url); err != nil {
-		panic(err)
+		return nil, err
 	} else {
-		var result types.ApiDescriptionDocument
 		defer resp.Body.Close()
-		json.NewDecoder(resp.Body).Decode(&result)
-		return &result
+		data := new(bytes.Buffer)
+		data.ReadFrom(resp.Body)
+		if d, err := libopenapi.NewDocument(data.Bytes()); err != nil {
+			return nil, err
+		} else {
+			return d, nil
+		}
 	}
 }
