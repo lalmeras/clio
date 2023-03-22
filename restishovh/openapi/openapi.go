@@ -1,9 +1,8 @@
-package main
+package openapi
 
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"os"
 	"path"
@@ -21,24 +20,7 @@ import (
 // root URL for OVH API
 const ROOT_URL = "https://api.ovh.com/"
 
-func execute() {
-	var genCmd = &cobra.Command{
-		Use:   "clio",
-		Short: "Openapi 3 conversion",
-		RunE:  generate,
-		Args:  cobra.NoArgs,
-	}
-	if err := genCmd.Execute(); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-}
-
-func main() {
-	execute()
-}
-
-func generate(cmd *cobra.Command, args []string) error {
+func Generate(cmd *cobra.Command, args []string) error {
 	result := DownloadApiListDescription("1.0")
 	for _, a := range result.Apis {
 		if err := openapiGenerate(cmd, a.Path, result.BasePath+a.Path+".yaml?format=openapi3"); err != nil {

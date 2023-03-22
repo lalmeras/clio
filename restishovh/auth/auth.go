@@ -1,4 +1,4 @@
-package main
+package auth
 
 import (
 	"crypto/sha1"
@@ -15,24 +15,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func Execute() {
-	var genCmd = &cobra.Command{
-		Use:   "restish-ovh",
-		Short: "Restish external tool for OVH authentication",
-		RunE:  Authenticate,
-		Args:  cobra.NoArgs,
-	}
-	if err := genCmd.Execute(); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-}
-
-func main() {
-	Execute()
-}
-
-func LoadCredentials() (*Credentials, error) {
+func loadCredentials() (*credentials, error) {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return nil, err
@@ -43,7 +26,7 @@ func LoadCredentials() (*Credentials, error) {
 		return nil, err
 	}
 	dec := json.NewDecoder(f)
-	credentials := &Credentials{}
+	credentials := &credentials{}
 	err = dec.Decode(credentials)
 	if err != nil {
 		return nil, err
@@ -52,7 +35,7 @@ func LoadCredentials() (*Credentials, error) {
 }
 
 func Authenticate(cmd *cobra.Command, args []string) error {
-	credentials, err := LoadCredentials()
+	credentials, err := loadCredentials()
 	if err != nil {
 		return err
 	}
@@ -61,7 +44,7 @@ func Authenticate(cmd *cobra.Command, args []string) error {
 	if err = dec.Decode(input); err != nil {
 		return err
 	}
-	result := SignRequest(*input, *credentials)
+	result := signRequest(*input, *credentials)
 	enc := json.NewEncoder(os.Stdout)
 	if err = enc.Encode(result); err != nil {
 		return err
@@ -69,18 +52,18 @@ func Authenticate(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func SignRequest(request cli.Request, credentials Credentials) cli.Request {
+func signRequest(request cli.Request, credentials credentials) cli.Request {
 	result := cli.Request(request)
 	headers := http.Header(request.Header)
 	now := time.Now()
 	headers.Set("X-Ovh-Application", credentials.ClientId)
 	headers.Set("X-Ovh-Consumer", credentials.ConsumerKey)
 	headers.Set("X-Ovh-Timestamp", fmt.Sprint(now.Unix()))
-	headers.Set("X-Ovh-Signature", SignPayload(credentials, result.Method, result.URI, result.Body, now))
+	headers.Set("X-Ovh-Signature", signPayload(credentials, result.Method, result.URI, result.Body, now))
 	return result
 }
 
-func SignPayload(credentials Credentials, method string, url string, body string, timestamp time.Time) string {
+func signPayload(credentials credentials, method string, url string, body string, timestamp time.Time) string {
 	trace, _ := os.OpenFile("/tmp/trace", os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0755)
 	defer trace.Close()
 	message := strings.Join([]string{
@@ -96,7 +79,7 @@ func SignPayload(credentials Credentials, method string, url string, body string
 	return fmt.Sprintf("$1$%s", hex.EncodeToString(sum[:]))
 }
 
-type Credentials struct {
+type credentials struct {
 	ClientId     string `json:"clientId,omitempty"`
 	ClientSecret string `json:"clientSecret,omitempty"`
 	ConsumerKey  string `json:"consumerKey,omitempty"`
